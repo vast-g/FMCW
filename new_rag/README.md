@@ -182,8 +182,8 @@ MCP 标准化工具协议：所有硬件、查询工具封装为 MCP Server，�
 https://blog.csdn.net/2401_87614554/article/details/162103554?spm=1001.2014.3001.5502
 
 ## 👤 项目作者
-流泪的盐淹鱼| 西安电子科技大学 | 电子信息类（空间科学与技术）
-GitHub：yyygjh
+大G| 西安电子科技大学 | 电子信息类（空间科学与技术）
+GitHub：https://github.com/vast-g
 License
 MIT License
 允许个人学习、二次开发、商用改造，转载请保留原作者信息。
