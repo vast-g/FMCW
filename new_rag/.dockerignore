@@ -1,0 +1,43 @@
+# 构建镜像时排除的内容（减小上下文与镜像体积）
+
+# 密钥
+.env
+.env.local
+
+# 版本控制与编辑器
+.git
+.gitignore
+.idea
+.vscode
+
+# Python 缓存
+__pycache__
+*.py[cod]
+*.egg-info
+.venv
+venv
+.pytest_cache
+
+# 运行时产物（由卷挂载提供，不打进镜像）
+reports
+bad_cases
+feedback
+faiss_facts
+data
+*.log
+
+# 大文件：模型权重与备份
+*.pt
+*.onnx
+*.gguf
+*_backup_*
+
+# 一次性补丁/探针脚本
+_patch_*.py
+_probe*.py
+_smoke.py
+_verify.py
+_new_run*.txt
+
+# 桌面端专用依赖清单（容器只装 requirements.txt）
+requirements-full.txt

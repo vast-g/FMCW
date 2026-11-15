@@ -1,0 +1,53 @@
+﻿[1] ������: 190  (���� 190) -> OK
+[2] id 1..190 ���ظ���ȱʧ -> OK
+[3] �ֶ����ϸ�ƥ�� ['id', 'query', 'task_type', 'expected_route', 'expected_tools', 'reference_answer', 'reference_sources', 'grounded', 'reviewed'] -> OK
+[4] expected_route ȫ���Ϸ� -> OK
+[5] expected_tools Ԫ��ȫ���Ϸ� -> OK
+[6] grounded=true ���зǿ� reference_answer �� reference_sources -> OK
+[7] reference_sources �ļ�����ʵ������ rag_docs/ -> OK
+[8] grounded=false ���� answer=null �� sources=[] -> OK
+[9] reviewed ȫΪ false -> OK
+[10] query �� test_200_questions.json ��ȫһ�� -> OK
+[11] �ο��𳤶Ⱦ��� 80-200 �� -> OK
+
+===== ͳ�� =====
+[expected_route �ֲ�]
+  react_agent         180
+  event_query          10
+[task_type �ֲ�]
+  hardware_troubleshoot      25
+  principle_knowledge        21
+  alert_rules                20
+  case_lookup                20
+  agent_about_rag            17
+  ops_instructions           17
+  optimization_extend        16
+  hardware_setup              8
+  installation                8
+  system_capability           7
+  data_management             6
+  vision_yolo                 5
+  agent_capability            4
+  system_intro                3
+  maintenance                 3
+  system_ui                   3
+  positioning                 2
+  os_compatibility            1
+  project_background          1
+  documentation               1
+  support                     1
+  onboarding_advice           1
+[grounded] true=162  false=28  ����=85.3%
+[expected_tools �ֲ�] {'tool_search_kb': 162, 'tool_get_gps': 2, 'tool_get_distance': 3, 'tool_get_weather': 1}
+[expected_tools Ϊ�յ�����] 28
+
+===== һ���Թ��� =====
+[12] grounded �� react_agent ���� tool_search_kb -> OK
+[13] ��������·�ɵ� expected_tools ��Ϊ�� -> OK
+[14] event_query ��ǩ == ��[������/ʲôʱ��/��¼] -> OK
+[15] ע�⣺���� id ���עΪ react_agent���������溬��������֧�Ĺؼ��ʣ�����ʱ�÷�֧���ȷ��أ�[49, 53, 57, 160, 182]
+[15b] ˵������Щ�ǡ��ؼ��ʼ��������С��ı�Ե�������纬�������𡱡����ߡ��ȷ����ʣ�����ǩ����֪ʶ��������ͼ����������ʱ��ע��
+[16] δ�����ǵ� route ��֧: ['casual', 'compound', 'fact_write', 'note_write', 'self_info', 'sensor_check', 'slip_judgment', 'trend_analysis']
+
+===== ���� =====
+ȫ��ͨ����PASS����190 �кϷ� JSONL�������ֶ���ö�١���Դ��һ���Թ�����Ϲ档

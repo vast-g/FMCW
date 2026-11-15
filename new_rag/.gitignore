@@ -1,0 +1,42 @@
+# ── 密钥与本地配置（绝不提交）──
+.env
+.env.local
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# ── 运行时产物 ──
+reports/
+bad_cases/
+feedback/
+faiss_facts/
+data/
+*.log
+
+# ── 大文件模型权重 ──
+*.pt
+*.onnx
+*.gguf
+
+# ── 一次性补丁/探针脚本（改造完成后可删）──
+_patch_*.py
+_probe*.py
+_smoke.py
+_verify.py
+_new_run*.txt
+
+# ── 编辑器 ──
+.idea/
+.vscode/
+
+# ── 本地备份与构建产物 ──
+*.bak_*
+*.bak
+slope-platform/target/
+slope-platform/*/target/
+docker-compose.override.yml

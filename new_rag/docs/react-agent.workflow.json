@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "ReAct Agent · State / Node / Edge / Conditional Edge",
+    "quality_profile": "showcase",
+    "viewBox": [1360, 720]
+  },
+  "lanes": [
+    { "id": "intake", "label": "① 入口节点 Node" },
+    { "id": "memory", "label": "② 记忆 —— 写进 State" },
+    { "id": "loop", "label": "③ 推理节点 Node" },
+    { "id": "tools", "label": "④ 工具节点 Node" },
+    { "id": "out", "label": "⑤ 收口节点 Node" }
+  ],
+  "phases": [
+    { "id": "recognize", "label": "识别 → 写 state", "fromCol": 0, "toCol": 2 },
+    { "id": "cycle", "label": "条件边读 state", "fromCol": 3, "toCol": 4, "variant": "emphasis" },
+    { "id": "close", "label": "收口", "fromCol": 5, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": ["user", "classify", "loadmem", "route", "agent", "finalize"],
+  "nodes": [
+    { "id": "user", "lane": "intake", "col": 0, "type": "external", "label": "用户提问", "width": 72 },
+    { "id": "classify", "lane": "intake", "col": 1, "type": "backend", "label": "classify", "sublabel": "写 intent", "tag": "Node", "width": 72 },
+    { "id": "route", "lane": "intake", "col": 3, "type": "security", "label": "条件边①", "sublabel": "读 intent", "tag": "6 出口", "width": 72 },
+    { "id": "fast", "lane": "intake", "col": 5, "type": "backend", "label": "其余 5 条路", "sublabel": "另 5 条", "tag": "Node", "width": 72 },
+    { "id": "loadmem", "lane": "memory", "col": 2, "type": "database", "label": "load_memory", "sublabel": "画像+摘要", "tag": "Node", "width": 72 },
+    { "id": "agent", "lane": "loop", "col": 3, "type": "backend", "label": "agent", "sublabel": "写 messages", "tag": "Node", "width": 72 },
+    { "id": "tools", "lane": "tools", "col": 5, "type": "messagebus", "label": "tools", "sublabel": "写观察", "tag": "Node", "width": 72 },
+    { "id": "finalize", "lane": "out", "col": 5, "type": "backend", "label": "finalize", "sublabel": "取答案", "tag": "Node", "width": 72 }
+  ],
+  "edges": [
+    { "id": "ask", "from": "user", "to": "classify", "variant": "default", "fromSide": "right", "toSide": "left", "route": "up-channel" },
+    { "id": "classify-mem", "from": "classify", "to": "loadmem", "variant": "default", "fromSide": "bottom", "toSide": "top", "route": "drop" },
+    { "id": "mem-route", "from": "loadmem", "to": "route", "variant": "default", "fromSide": "right", "toSide": "bottom", "route": "up-channel" },
+    { "id": "route-agent", "from": "route", "to": "agent", "label": "analysis", "variant": "emphasis", "role": "main", "fromSide": "bottom", "toSide": "top", "route": "drop" },
+    { "id": "route-fast", "from": "route", "to": "fast", "variant": "dashed", "role": "branch", "fromSide": "right", "toSide": "left", "route": "up-channel" },
+    { "id": "agent-tools", "from": "agent", "to": "tools", "variant": "emphasis", "role": "main", "fromSide": "right", "toSide": "left" },
+    { "id": "tools-agent", "from": "tools", "to": "agent", "label": "观察 → 再想（循环）", "variant": "emphasis", "role": "return", "fromSide": "top", "toSide": "top", "route": "up-channel" },
+    { "id": "agent-final", "from": "agent", "to": "finalize", "label": "条件边② 无 tool_calls", "variant": "emphasis", "role": "main", "fromSide": "bottom", "toSide": "left", "route": "bottom-channel" },
+    { "id": "fast-final", "from": "fast", "to": "finalize", "variant": "dashed", "role": "branch", "fromSide": "right", "toSide": "top", "route": "outside-right" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "四个概念在图上的位置",
+      "items": [
+        "State：共享 TypedDict，所有节点读写同一份",
+        "Node：带 Node 角标的框，返回 state 的增量",
+        "Edge：实线箭头，一定走这条",
+        "Conditional Edge：标「条件边①②」的框，按 state 决定出口"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "两条条件边各读什么",
+      "items": [
+        "① 读 intent → 6 出口，analysis 才进 ReAct",
+        "② 读 retry · deadline · tool_calls → 继续或收口",
+        "写 state 的是节点，读 state 做决策的是条件边",
+        "agent ⇄ tools 那条回边就是 ReAct 循环本身"
+      ]
+    }
+  ]
+}

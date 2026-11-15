@@ -1,0 +1,10 @@
+【上位机操作系统兼容范围】
+1. Windows系统：Win7、Win10、Win Server 2012、Win Server 2012 R2、Win Server 2016（均为64位版本）
+2. Linux系统：Ubuntu、CentOS等主流发行版
+3. 国产操作系统：麒麟操作系统
+
+【硬件基础要求】
+基础配置：2核CPU@2.8GHz，推荐4核及以上CPU配置，保障运行流畅度
+
+【项目适配说明】
+本监测项目基于Python + Tkinter框架开发，理论上兼容所有可运行Python 3.13版本的操作系统，包含Windows、Linux、macOS；项目实际测试与落地应用以Windows系统为主。

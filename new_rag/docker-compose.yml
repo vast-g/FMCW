@@ -1,0 +1,162 @@
+# ═══════════════════════════════════════════════════════════════
+# 边坡监测 Agent —— 一键编排
+#
+#   docker compose up -d              启动 mysql + ollama + api
+#   docker compose run --rm model-pull 首次拉取模型（约 5GB，只需一次）
+#   docker compose run --rm eval python -m slope_eval check
+#   docker compose run --rm eval python -m slope_eval run --limit 20
+#   docker compose logs -f api
+#   docker compose down                停止（数据保留在命名卷）
+#
+# 说明：
+#   * api 通过服务名访问依赖：DB_HOST=mysql、OLLAMA_BASE_URL=http://ollama:11434
+#   * Ollama 数据放在命名卷，避免每次重建都重新下载模型
+#   * api 用 healthcheck 探活，评测容器 depends_on 其 service_healthy
+# ═══════════════════════════════════════════════════════════════
+
+services:
+  # ── 数据库 ──
+  mysql:
+    image: mysql:8.4
+    container_name: slope-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-Root@123456}
+      MYSQL_DATABASE: ${DB_NAME:-slope_agent}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      # 仅绑定回环，避免把数据库暴露到局域网
+      - "127.0.0.1:3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${DB_PASSWORD:-Root@123456}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    networks: [slope]
+
+  # ── 本地小模型服务 ──
+  ollama:
+    image: ollama/ollama:latest
+    container_name: slope-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama-data:/root/.ollama
+    ports:
+      - "127.0.0.1:11434:11434"
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    networks: [slope]
+
+  # ── 首次部署：拉取模型（一次性任务）──
+  model-pull:
+    image: ollama/ollama:latest
+    container_name: slope-model-pull
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        echo "拉取被测模型与向量模型（约 5GB，仅首次需要）..."
+        ollama pull ${OLLAMA_MODEL:-qwen3:4b}
+        ollama pull ${OLLAMA_EMBED_MODEL:-qwen3-embedding:4b}
+        echo "完成："
+        ollama list
+    networks: [slope]
+    restart: "no"
+
+  # ── 应用（API 模式，无头）──
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: slope-agent:latest
+    container_name: slope-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    environment:
+      HEADLESS: "true"
+      APP_ENV: prod
+      # 容器内用服务名而非 localhost
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-Root@123456}
+      DB_NAME: ${DB_NAME:-slope_agent}
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b}
+      OLLAMA_EMBED_MODEL: ${OLLAMA_EMBED_MODEL:-qwen3-embedding:4b}
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: "8000"
+      # 裁判（百炼）—— 从宿主机 .env 注入，切勿写进镜像
+      JUDGE_PROVIDER: ${JUDGE_PROVIDER:-dashscope}
+      JUDGE_MODEL: ${JUDGE_MODEL:-glm-5.3}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+    volumes:
+      # 知识库与产出挂出来，便于宿主机查看报告与热更新语料
+      - ./rag_docs:/app/rag_docs:ro
+      - ./eval:/app/eval
+      - ./reports:/app/reports
+      - ./bad_cases:/app/bad_cases
+    ports:
+      - "8000:8000"
+    networks: [slope]
+
+  # ── 评测（按需运行的一次性容器）──
+  eval:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: slope-agent:latest
+    container_name: slope-eval
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    environment:
+      HEADLESS: "true"
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-Root@123456}
+      DB_NAME: ${DB_NAME:-slope_agent}
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b}
+      OLLAMA_EMBED_MODEL: ${OLLAMA_EMBED_MODEL:-qwen3-embedding:4b}
+      JUDGE_PROVIDER: ${JUDGE_PROVIDER:-dashscope}
+      JUDGE_MODEL: ${JUDGE_MODEL:-glm-5.3}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+    volumes:
+      - ./rag_docs:/app/rag_docs:ro
+      - ./eval:/app/eval
+      - ./reports:/app/reports
+      - ./bad_cases:/app/bad_cases
+    # 默认不随 up 启动，用 `docker compose run --rm eval ...` 触发
+    profiles: ["tools"]
+    networks: [slope]
+
+volumes:
+  mysql-data:
+  ollama-data:
+
+networks:
+  slope:
+    driver: bridge
