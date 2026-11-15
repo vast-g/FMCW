@@ -1,0 +1,22 @@
+# 密钥与本地配置
+.env
+.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 运行产物
+*.log
+chat_histories/
+feedback/
+reports/
+bad_cases/
+faiss_facts/
+data/
+
+# 模型权重以外的临时文件
+*.onnx
+*.gguf
